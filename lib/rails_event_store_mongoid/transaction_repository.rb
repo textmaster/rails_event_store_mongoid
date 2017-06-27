@@ -18,6 +18,8 @@ module RailsEventStoreMongoid
       start_transaction(stream_name)
       yield
       commit_transaction
+      ensure
+        @transaction_object = nil
     end
 
     def create(event, stream_name)
@@ -100,7 +102,6 @@ module RailsEventStoreMongoid
 
     def commit_transaction
       transaction_object.save!
-      @transaction_object = nil
     end
 
     def in_transaction?
