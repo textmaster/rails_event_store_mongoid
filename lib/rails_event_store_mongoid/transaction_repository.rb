@@ -118,11 +118,12 @@ module RailsEventStoreMongoid
     end
 
     def build_snapshot_model(event)
-      build_event_model(event).merge({
+      build_event_model(event).merge(
         snapshot: true,
-      })
+      )
     end
 
+    #NB: The count parameter is count of transactions and is disabled if nil
     def read_forwards(adapter, start_event_id, count = 0)
       stream = adapter
       unless start_event_id.equal?(:head)
@@ -130,12 +131,12 @@ module RailsEventStoreMongoid
         starting = starting_tx.events.after(start_event_id)
         stream = stream.where(:ts.gt => starting_tx.ts)
       end
-      #TODO: This is count of transactions not count of events
       stream = stream.limit(count) if count > 0
 
-      (starting || []) + stream.asc(:ts).map(&method(:build_event_entities)).flatten(1)
+      Array(starting) + stream.asc(:ts).map(&method(:build_event_entities)).flatten(1)
     end
 
+    #NB: The count parameter is count of transactions and is disabled if nil
     def read_backwards(adapter, start_event_id, count = nil)
       stream = adapter
       unless start_event_id.equal?(:head)
@@ -143,10 +144,9 @@ module RailsEventStoreMongoid
         starting = starting_tx.events.before(start_event_id)
         stream = stream.where(:ts.lt => starting_tx.ts)
       end
-      #TODO: This is count of transactions not count of events
       stream = stream.limit(count) if count > 0
 
-      (starting || []) + stream.desc(:ts).map { |t| build_event_entities(t).reverse }.flatten(1)
+      Array(starting) + stream.desc(:ts).map { |t| build_event_entities(t).reverse }.flatten(1)
     end
 
     def build_event_entity(record)
