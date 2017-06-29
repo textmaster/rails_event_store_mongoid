@@ -69,9 +69,8 @@ module RailsEventStoreMongoid
     end
 
     index({ 'events.event_id': 1 }, { unique: true })
-    index(stream: 1, ts: 1)
-    # What is the index I want?
-    # index({ stream: 1, ts: 1}, { partialFilterExpress: { 'events.snapshot': true } })
-
+    index({'events.event_id': 1, stream: 1}, { unique: true })
+    index(stream: 1, ts: 1, 'events.snapshot': 1)
+    index(ts: 1)
   end
 end
