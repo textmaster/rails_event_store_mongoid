@@ -2,18 +2,21 @@ require 'rails_event_store_mongoid/lock'
 
 module RailsEventStoreMongoid
   class Locker
-    def initialize(adapter: ::RailsEventStoreMongoid::Lock.new)
+    attr_reader :adapter, :timeout, :retry_interval
+
+    def initialize(timeout: 10, retry_interval: 0.1, adapter: ::RailsEventStoreMongoid::Lock.new)
+      @timeout = timeout
+      @retry_interval = retry_interval
       @adapter = adapter
     end
 
     def with_lock(stream, &block)
       begin
-        retry_count = 0
-        @adapter.with_lock(stream, &block)
+        start = Time.now
+        adapter.with_lock(stream, &block)
       rescue CannotObtainLock
-        retry_count += 1
-        if retry_count < 5
-          sleep(0.5)
+        if (Time.now - start) < timeout
+          sleep(retry_interval)
           retry
         else
           raise
